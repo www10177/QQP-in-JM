@@ -11,7 +11,7 @@ import os
 #  Configs : data locations  #
 ##############################
 datalocation = './data/'
-trainfile = 'small.csv'
+trainfile = 'test.csv'
 lamb = 0.5
 threshold = 0.000000005
 
@@ -34,9 +34,7 @@ def addAllQuestionsToCorpus(questions, lamb):
     totalcount = questions.shape[0]
     for index, i in enumerate(questions):
         print("Adding Questions...")
-        print("Progress : {:.2%}".format(float(index) / totalcount))
-        print("Imported : %d" % index)
-        os.system('clear')
+        print("Progress : {:.2%} Imported : ".format(float(index) / totalcount)+str(index))
         corpus.add(jmlm.JMModel(i[0]))
         corpus.add(jmlm.JMModel(i[1]))
     return corpus
@@ -55,10 +53,8 @@ def probList(questions, corpus):
         l.append(
             (i, 1 if corpus.prob(
                 2*i, questions[i][1]) >= threshold else 0))
-        print("Doing Query...")
-        print("Progress : {:.2%}".format(float(i) / totalcount))
-        print("Querying : %d" % i)
-        os.system('clear')
+        print("Querying...")
+        print("Progress : {:.2%} Querying : ".format(float(i) / totalcount)+ str(i))
     return l
 
 
