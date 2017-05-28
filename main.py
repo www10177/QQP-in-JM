@@ -75,9 +75,14 @@ def probList(questions, corpus):
     l = []
     totalcount = questions.shape[0]
     for i in range(0, len(questions)):
+        # Threshold
+        # l.append(
+            # (i, 1 if corpus.prob(
+                # 2*i, questions[i][1]) >= threshold else 0))
+
+        # Probability
         l.append(
-            (i, 1 if corpus.prob(
-                2*i, questions[i][1]) >= threshold else 0))
+            (i, corpus.prob(2*i, questions[i][1])))
         print("Querying...")
         print(
             "Progress : {:.2%} Querying : ".format(

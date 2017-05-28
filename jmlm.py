@@ -11,7 +11,8 @@ def preprocessing(sentence):
     """
     parser = Parser.Parser()
     token = parser.tokenise(sentence)
-    return parser.removeStopWords(token)
+    # return parser.removeStopWords(token)
+    return token
 
 
 def updateDict(dict1, dict2):
@@ -100,6 +101,7 @@ class Corpus:
                     return (1-self.lamb)*self.worddict[word]/self.totalword
             else:
                 print (word, ' is not in language model')
+                return 0
 
 
 class JMModel:
