@@ -4,6 +4,11 @@ import Parser
 
 
 def preprocessing(sentence):
+    """
+    Doing word preprocessing
+    in : string
+    out : list of words after preprocessing
+    """
     parser = Parser.Parser()
     token = parser.tokenise(sentence)
     return parser.removeStopWords(token)
@@ -22,6 +27,12 @@ def updateDict(dict1, dict2):
 
 
 class Corpus:
+    """
+    Members :
+        data : list contains JMModel
+        totalword : int which holds total words in this corpus
+        worddict : dict that contains all {word : prob } in this corpus
+    """
     data = []
     totalword = 0
     worddict = {}
@@ -30,6 +41,11 @@ class Corpus:
         self.lamb = lamb
 
     def add(self, item):
+        """
+        add JMModel into corpus
+        In : list of JMModels or JMModel
+        Out : if input is JMModel, it will return index did this JMModel added
+        """
         if hasattr(item, '__iter__'):
             # add list of JMModels
             for i in item:
@@ -42,6 +58,16 @@ class Corpus:
             return len(self.data)-1  # return index
 
     def prob(self, index, word, mode='prob'):
+        """
+        calculate prob of word or sentences
+        In :
+            Index : doing query on which JMModel
+            word : sentence or single word which used to query
+            mode : 'prob' will return only float
+                   'list' will return list of each word probability
+        Out : float or list controlled by mode para
+        """
+
         if " " in word:
             if mode == 'list':
                 result = []
@@ -77,6 +103,8 @@ class Corpus:
 
 
 class JMModel:
+
+
     """
     class of language models
     members :
@@ -101,6 +129,10 @@ class JMModel:
             value in self.wordCounter.items()}
 
     def wordProb(self, word):
+        """
+        calculate prob of word
+        in : string
+        """
         if word in self.probdict:
             return self.probdict[word]
         else:
