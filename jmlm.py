@@ -56,10 +56,10 @@ class Corpus:
             # add single JMModel
             # self.data.append(item)
             # with open('data/pkls/'+count+'.pkl') as data:
+            item.save(dataLocation+str(self.count)+'.pkl')
             self.count += 1
             self.totalword += item.totalword
             updateDict(self.worddict, dict(item.wordCounter))
-            item.save(dataLocation+str(self.count)+'.pkl')
 
     def addWithExisted(self, item):
         self.count += 1
@@ -81,7 +81,7 @@ class Corpus:
             if mode == 'list':
                 result = []
                 for w in preprocessing(word):
-                    result.append(self.prob(index, w))
+                    result.append(self.prob(index, w, location))
                     result.sort(key=lambda x: x[1], reverse=True)
                 return result
             else:
