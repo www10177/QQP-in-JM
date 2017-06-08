@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from collections import Counter
 import Parser
+import pickle
 
 
 def preprocessing(sentence):
@@ -34,18 +35,18 @@ class Corpus:
         totalword : int which holds total words in this corpus
         worddict : dict that contains all {word : prob } in this corpus
     """
-    data = []
-    totalword = 0
-    worddict = {}
+    # data = []
 
     def __init__(self, lamb):
         self.lamb = lamb
+        self.count = 0
+        self.totalword = 0
+        self.worddict = {}
 
-    def add(self, item):
+    def add(self, item, dataLocation):
         """
         add JMModel into corpus
         In : list of JMModels or JMModel
-        Out : if input is JMModel, it will return index did this JMModel added
         """
         if hasattr(item, '__iter__'):
             # add list of JMModels
@@ -53,12 +54,19 @@ class Corpus:
                 self.add(i)
         else:
             # add single JMModel
-            self.data.append(item)
+            # self.data.append(item)
+            # with open('data/pkls/'+count+'.pkl') as data:
+            self.count += 1
             self.totalword += item.totalword
             updateDict(self.worddict, dict(item.wordCounter))
-            return len(self.data)-1  # return index
+            item.save(dataLocation+str(self.count)+'.pkl')
 
-    def prob(self, index, word, mode='prob'):
+    def addWithExisted(self, item):
+        self.count += 1
+        self.totalword += item.totalword
+        updateDict(self.worddict, dict(item.wordCounter))
+
+    def prob(self, index, word, location, mode='prob'):
         """
         calculate prob of word or sentences
         In :
@@ -79,33 +87,36 @@ class Corpus:
             else:
                 result = 1.0
                 for w in preprocessing(word):
-                    result *= self.prob(index, w)
+                    result *= self.prob(index, w, location)
                 return result
         else:
-            probdict = self.data[index].probdict
-            if word in probdict:
-                # jm smoothing #
-                # lamb * P(w|D) + (1-lamb) * P(w|C) #
-                if mode == 'list':
-                    return (word, self.lamb * probdict[word] + (
-                        1-self.lamb)*self.worddict[word]/self.totalword)
-                else:
-                    return self.lamb * probdict[word] + (
-                        1-self.lamb)*self.worddict[word]/self.totalword
+            with open(location+str(index)+'.pkl', 'rb') as model:
+                jmm = pickle.load(model)
+                probdict = jmm.probdict
+            # probdict = self.data[index].probdict
+                if word in probdict:
+                    # jm smoothing #
+                    # lamb * P(w|D) + (1-lamb) * P(w|C) #
+                    if mode == 'list':
+                        return (word, self.lamb * probdict[word] + (
+                            1-self.lamb)*self.worddict[word]/self.totalword)
+                    else:
+                        return self.lamb * probdict[word] + (
+                            1-self.lamb)*self.worddict[word]/self.totalword
 
-            elif word in self.worddict:
-                if mode == 'list':
-                    return (
-                        word, (1-self.lamb)*self.worddict[word]/self.totalword)
+                elif word in self.worddict:
+                    if mode == 'list':
+                        return (
+                            word, (1-self.lamb)*self.worddict[word]/self.totalword)
+                    else:
+                        return (1-self.lamb)*self.worddict[word]/self.totalword
                 else:
-                    return (1-self.lamb)*self.worddict[word]/self.totalword
-            else:
-                print (word, ' is not in language model')
-                return 0
+                    print (word, ' is not in language model')
+                    return 0
+                del jmm, probdict
 
 
 class JMModel:
-
 
     """
     class of language models
@@ -119,16 +130,22 @@ class JMModel:
 
     def __init__(self, text):
         """init and build dict"""
-        self.token = preprocessing(text)
-        self.totalword = len(self.token)
-        self.wordCounter = Counter(self.token)
-        self.calProb = lambda value: float(value) / self.totalword
-        self.buildProbDict()
-
-    def buildProbDict(self):
+        token = preprocessing(text)
+        self.totalword = len(token)
+        self.wordCounter = Counter(token)
+        calProb = lambda value: float(value) / self.totalword
         self.probdict = {
-            name: self.calProb(value) for name,
+            name: calProb(value) for name,
             value in self.wordCounter.items()}
+
+    def __del__(self):
+        del self.wordCounter
+        del self.totalword
+        del self.probdict
+
+    def save(self, location):
+        with open(location, 'wb') as save:
+            pickle.dump(self, save, protocol=pickle.HIGHEST_PROTOCOL)
 
     def wordProb(self, word):
         """
@@ -142,6 +159,6 @@ class JMModel:
 
 
 if __name__ == '__main__':
-    dict1={'a':1}
-    dict2={'a':2, 'b':3}
-    updateDict(dict1,dict2)
+    with open('./test/0.pkl', 'rb')as f:
+        p = pickle.load(f)
+        print (p.probdict)

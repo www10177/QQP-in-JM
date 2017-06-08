@@ -2,6 +2,9 @@
 # from pandas import read_csv
 import pandas
 import jmlm
+import gc
+import pickle
+import sys
 import os
 # import numpy as np
 # import nltk
@@ -11,7 +14,8 @@ import os
 #  Configs : data locations  #
 ##############################
 datalocation = './data/'
-trainfile = 'test.csv'
+pklLocation = './data/pkls/'
+trainfile = 'stringPOS.csv'
 lamb = 0.5
 threshold = 0.000000005
 
@@ -46,8 +50,13 @@ def addAllQuestionsToCorpus(questions, lamb):
         print("Adding Questions...")
         print("Progress : {:.2%} Imported : ".format(
                   float(index) / totalcount) + str(index))
-        corpus.add(jmlm.JMModel(i[0]))
-        corpus.add(jmlm.JMModel(i[1]))
+        a = jmlm.JMModel(i[0])
+        b = jmlm.JMModel(i[1])
+        corpus.add(a, pklLocation)
+        corpus.add(b, pklLocation)
+        del a, b
+        if index % 10000 == 0:
+            gc.collect()
     return corpus
 
 
@@ -81,27 +90,60 @@ def probList(questions, corpus):
                 # 2*i, questions[i][1]) >= threshold else 0))
 
         # Probability
-        l.append(
-            (i, corpus.prob(2*i, questions[i][1])))
+        prob = corpus.prob(2*i, questions[i][1], pklLocation)
+        l.append((i, prob))
+        del prob
         print("Querying...")
         print(
             "Progress : {:.2%} Querying : ".format(
                 float(i) /
                 totalcount) +
          str(i))
+        if i % 10000 == 0:
+            gc.collect()
+
     return l
 
 
 if __name__ == "__main__":
-    source = pandas.read_csv(datalocation + trainfile)
-    questions = getQuestions(source)
-    corpus = addAllQuestionsToCorpus(questions, lamb)
-    # printAllProb(questions, corpus)
-    d = pandas.DataFrame(
-        data=probList(
-            questions,
-            corpus),
-        columns=[
-            'test_id',
-             'is_duplicate'])
-    d.to_csv('test.csv', index=False)
+    if len(sys.argv) < 2:
+        print ('Usage : python3 main.py -p(-q)')
+        print ('-p to preprocess')
+        print ('-q to query')
+        print ('ex: python3 main.py -q')
+    # preprocessing
+    elif sys.argv[1] == '-p':
+        source = pandas.read_csv(datalocation + trainfile)
+        questions = getQuestions(source)
+        corpus = addAllQuestionsToCorpus(questions, lamb)
+        with open(pklLocation + 'corpus.pkl', 'wb') as corpusSave:
+            pickle.dump(corpus, corpusSave, protocol=pickle.HIGHEST_PROTOCOL)
+    elif sys.argv[1] == '-q':
+        source = pandas.read_csv(datalocation + trainfile)
+        questions = getQuestions(source)
+        with open(pklLocation+'corpus.pkl', 'rb') as pkl:
+            corpus = pickle.load(pkl)
+        # __printAllProb(questions, corpus)
+            print (corpus.worddict)
+            d = pandas.DataFrame(
+                data=probList(
+                    questions,
+                    corpus),
+                columns=[
+                    'test_id',
+                    'is_duplicate'])
+            d.to_csv('test.csv', index=False)
+    elif sys.argv[1] == '-r':
+        # re-generate corpus.pkl
+        corpus = jmlm.Corpus(lamb)
+        for loc, d, files in os.walk(pklLocation):
+            for f in files:
+                with open(loc+f, 'rb') as modelf:
+                    model = pickle.load(modelf)
+                    corpus.addWithExisted(model)
+        with open(pklLocation+'corpus.pkl', 'wb') as f:
+            pickle.dump(corpus,f)
+    else:
+        print ('add -p to preprocess')
+        print ('add -q to query')
+        print ('ex: python3 main.py -q')
