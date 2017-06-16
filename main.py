@@ -14,9 +14,10 @@ import os
 #  Configs : data locations  #
 ##############################
 datalocation = './data/'
-pklLocation = './data/pkls/'
-trainfile = 'stringPOS.csv'
-lamb = 0.5
+pklLocation = '../../../../pkls/'
+# pklLocation = './data/pkls/'
+trainfile = 'stringPOS_train.csv'
+lamb = 0.7
 threshold = 0.000000005
 
 
@@ -47,9 +48,10 @@ def addAllQuestionsToCorpus(questions, lamb):
     corpus = jmlm.Corpus(lamb)
     totalcount = questions.shape[0]
     for index, i in enumerate(questions):
-        print("Adding Questions...")
-        print("Progress : {:.2%} Imported : ".format(
-                  float(index) / totalcount) + str(index))
+        if index % 10000 == 0:
+            print("Adding Questions...")
+            print("Progress : {:.2%} Imported : ".format(
+                    float(index) / totalcount) + str(index))
         a = jmlm.JMModel(i[0])
         b = jmlm.JMModel(i[1])
         corpus.add(a, pklLocation)
@@ -93,13 +95,13 @@ def probList(questions, corpus):
         prob = corpus.prob(2*i, questions[i][1], pklLocation)
         l.append((i, prob))
         del prob
-        print("Querying...")
-        print(
-            "Progress : {:.2%} Querying : ".format(
-                float(i) /
-                totalcount) +
-         str(i))
         if i % 10000 == 0:
+            print("Querying...")
+            print(
+                "Progress : {:.2%} Querying : ".format(
+                    float(i) /
+                    totalcount) +
+            str(i))
             gc.collect()
 
     return l
@@ -132,7 +134,7 @@ if __name__ == "__main__":
                 columns=[
                     'test_id',
                     'is_duplicate'])
-            d.to_csv('test.csv', index=False)
+            d.to_csv('test.csv', index=False, float_format = '%.13f')
     elif sys.argv[1] == '-r':
         # re-generate corpus.pkl
         corpus = jmlm.Corpus(lamb)

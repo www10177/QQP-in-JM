@@ -116,6 +116,21 @@ class Corpus:
                 del jmm, probdict
 
 
+
+class pair:
+
+    def __init__(self, q1, q2):
+        self.q1 = JMModel(q1)
+        self.q2 = JMModel(q2)
+        self.totalword = self.q1+self.q2
+
+
+
+    def save(self, location):
+        with open(location, 'wb') as save:
+            pickle.dump(self, save, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 class JMModel:
 
     """
